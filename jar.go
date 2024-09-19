@@ -1,12 +1,12 @@
-// Copyright 2012 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+//版权所有 2012 The Go 作者。版权所有。
+//此源代码的使用受 BSD 风格的约束
+//可以在 LICENSE 文件中找到的许可证。
 
-// Package cookiejar implements an in-memory RFC 6265-compliant http.CookieJar.
+// cookiejar 包实现了内存中符合 RFC 6265 的 http.CookieJar。
 //
-// This implementation is a fork of net/http/cookiejar which also
-// implements methods for dumping the cookies to persistent
-// storage and retrieving them.
+// 这个实现是 net/http/cookiejar 的一个分支，它也
+// 实现将 cookie 转储到持久化的方法
+// 存储和检索它们。
 package cookiejar
 
 import (
@@ -27,56 +27,56 @@ import (
 	"gopkg.in/errgo.v1"
 )
 
-// PublicSuffixList provides the public suffix of a domain. For example:
-//      - the public suffix of "example.com" is "com",
-//      - the public suffix of "foo1.foo2.foo3.co.uk" is "co.uk", and
-//      - the public suffix of "bar.pvt.k12.ma.us" is "pvt.k12.ma.us".
+// PublicSuffixList 提供域的公共后缀。例如：
+// -“example.com”的公共后缀是“com”，
+// -“foo1.foo2.foo3.co.uk”的公共后缀是“co.uk”，并且
+// -“bar.pvt.k12.ma.us”的公共后缀是“pvt.k12.ma.us”。
 //
-// Implementations of PublicSuffixList must be safe for concurrent use by
-// multiple goroutines.
+// PublicSuffixList 的实现必须对于并发使用是安全的
+// 多个 goroutine。
 //
-// An implementation that always returns "" is valid and may be useful for
-// testing but it is not secure: it means that the HTTP server for foo.com can
-// set a cookie for bar.com.
+// 始终返回“”的实现是有效的并且可能对
+// 测试但不安全：这意味着 foo.com 的 HTTP 服务器可以
+// 为 bar.com 设置 cookie。
 //
-// A public suffix list implementation is in the package
-// golang.org/x/net/publicsuffix.
+// 包中包含公共后缀列表实现
+// golang.org/x/net/publicsuffix。
 type PublicSuffixList interface {
-	// PublicSuffix returns the public suffix of domain.
+	//PublicSuffix 返回域的公共后缀。
 	//
-	// TODO: specify which of the caller and callee is responsible for IP
-	// addresses, for leading and trailing dots, for case sensitivity, and
-	// for IDN/Punycode.
+	//TODO: 指定调用者和被调用者中的哪一个负责 IP
+	//地址，前导点和尾随点，区分大小写，以及
+	//对于 IDN/Punycode。
 	PublicSuffix(domain string) string
 
-	// String returns a description of the source of this public suffix
-	// list. The description will typically contain something like a time
-	// stamp or version number.
+	//String 返回此公共后缀来源的描述
+	//列表。描述通常会包含诸如时间之类的内容
+	//标记或版本号。
 	String() string
 }
 
-// Options are the options for creating a new Jar.
+// Options 是创建新 Jar 的选项。
 type Options struct {
-	// PublicSuffixList is the public suffix list that determines whether
-	// an HTTP server can set a cookie for a domain.
+	//PublicSuffixList为公共后缀列表，判断是否
+	//HTTP 服务器可以为域设置 cookie。
 	//
-	// If this is nil, the public suffix list implementation in golang.org/x/net/publicsuffix
-	// is used.
+	//如果为 nil，则为 golang.org/x/net/publicsuffix 中的公共后缀列表实现
+	//被使用。
 	PublicSuffixList PublicSuffixList
 
-	// Filename holds the file to use for storage of the cookies.
-	// If it is empty, the value of DefaultCookieFile will be used.
+	//Filename 保存用于存储 cookie 的文件。
+	//如果为空，则使用 DefaultCookieFile 的值。
 	Filename string
 
-	// NoPersist specifies whether no persistence should be used
-	// (useful for tests). If this is true, the value of Filename will be
-	// ignored.
+	//NoPersist 指定是否不应该使用持久性
+	//（对于测试有用）。如果这是真的，文件名的值将是
+	//被忽略。
 	NoPersist bool
 }
 
-// Jar implements the http.CookieJar interface from the net/http package.
+// Jar 实现了 net/http 包中的 http.CookieJar 接口。
 type Jar struct {
-	// filename holds the file that the cookies were loaded from.
+	// filename 保存加载 cookie 的文件。
 	filename string
 
 	psList PublicSuffixList
@@ -84,23 +84,23 @@ type Jar struct {
 	// mu locks the remaining fields.
 	mu sync.Mutex
 
-	// entries is a set of entries, keyed by their eTLD+1 and subkeyed by
-	// their name/domain/path.
+	//条目是一组条目，由其 eTLD+1 指定密钥并由
+	//他们的名称/域/路径。
 	entries map[string]map[string]entry
 }
 
 var noOptions Options
 
-// New returns a new cookie jar. A nil *Options is equivalent to a zero
-// Options.
+// New 返回一个新的 cookie jar。 nil *Options 相当于零
+// 选项。
 //
-// New will return an error if the cookies could not be loaded
-// from the file for any reason than if the file does not exist.
+// 如果 cookie 无法加载，New 将返回错误
+// 出于任何原因从文件中读取，而不是文件不存在。
 func New(o *Options) (*Jar, error) {
 	return newAtTime(o, time.Now())
 }
 
-// newAtTime is like New but takes the current time as a parameter.
+// newAtTime 与 New 类似，但将当前时间作为参数。
 func newAtTime(o *Options, now time.Time) (*Jar, error) {
 	jar := &Jar{
 		entries: make(map[string]map[string]entry),
@@ -123,7 +123,7 @@ func newAtTime(o *Options, now time.Time) (*Jar, error) {
 	return jar, nil
 }
 
-// homeDir returns the OS-specific home path as specified in the environment.
+// homeDir 返回环境中指定的特定于操作系统的主路径。
 func homeDir() string {
 	if runtime.GOOS == "windows" {
 		return filepath.Join(os.Getenv("HOMEDRIVE"), os.Getenv("HOMEPATH"))
@@ -131,12 +131,12 @@ func homeDir() string {
 	return os.Getenv("HOME")
 }
 
-// entry is the internal representation of a cookie.
+// entry 是 cookie 的内部表示。
 //
-// This struct type is not used outside of this package per se, but the exported
-// fields are those of RFC 6265.
-// Note that this structure is marshaled to JSON, so backward-compatibility
-// should be preserved.
+// 此结构类型本身不在该包之外使用，但在导出的
+// 字段是 RFC 6265 的字段。
+// 请注意，此结构被编组为 JSON，因此向后兼容
+// 应该保留。
 type entry struct {
 	Name       string
 	Value      string
@@ -150,37 +150,37 @@ type entry struct {
 	Creation   time.Time
 	LastAccess time.Time
 
-	// Updated records when the cookie was updated.
-	// This is different from creation time because a cookie
-	// can be changed without updating the creation time.
+	//cookie更新时更新记录。
+	//这与创建时间不同，因为 cookie
+	//可以在不更新创建时间的情况下进行更改。
 	Updated time.Time
 
-	// CanonicalHost stores the original canonical host name
-	// that the cookie was associated with. We store this
-	// so that even if the public suffix list changes (for example
-	// when storing/loading cookies) we can still get the correct
-	// jar keys.
+	//CanonicalHost 存储原始规范主机名
+	//与 cookie 关联的。我们存储这个
+	//这样即使公共后缀列表发生变化（例如
+	//当存储/加载cookie时）我们仍然可以获得正确的结果
+	//jar 密钥。
 	CanonicalHost string
 }
 
-// id returns the domain;path;name triple of e as an id.
+// id 返回 e 的域；路径；名称三元组作为 id。
 func (e *entry) id() string {
 	return id(e.Domain, e.Path, e.Name)
 }
 
-// id returns the domain;path;name triple as an id.
+// id 返回域；路径；名称三元组作为 id。
 func id(domain, path, name string) string {
 	return fmt.Sprintf("%s;%s;%s", domain, path, name)
 }
 
-// shouldSend determines whether e's cookie qualifies to be included in a
-// request to host/path. It is the caller's responsibility to check if the
-// cookie is expired.
+// shouldSend 判断 e 的 cookie 是否有资格包含在 a 中
+// 请求主机/路径。调用者有责任检查是否
+// cookie 已过期。
 func (e *entry) shouldSend(https bool, host, path string) bool {
 	return e.domainMatch(host) && e.pathMatch(path) && (https || !e.Secure)
 }
 
-// domainMatch implements "domain-match" of RFC 6265 section 5.1.3.
+// domainMatch 实现 RFC 6265 第 5.1.3 节的“域匹配”。
 func (e *entry) domainMatch(host string) bool {
 	if e.Domain == host {
 		return true
@@ -252,7 +252,7 @@ func (j *Jar) Cookies(u *url.URL) (cookies []*http.Cookie) {
 	return j.cookies(u, time.Now())
 }
 
-// cookies is like Cookies but takes the current time as a parameter.
+// cookies 与 Cookie 类似，但将当前时间作为参数。
 func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 	if u.Scheme != "http" && u.Scheme != "https" {
 		return cookies
@@ -306,15 +306,15 @@ func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 	return cookies
 }
 
-// AllCookies returns all cookies in the jar. The returned cookies will
-// have Domain, Expires, HttpOnly, Name, Secure, Path, and Value filled
-// out. Expired cookies will not be returned. This function does not
-// modify the cookie jar.
+// AllCookies 返回 jar 中的所有 cookie。返回的cookie将
+// 填写了 Domain、Expires、HttpOnly、Name、Secure、Path 和 Value
+// 出去。过期的 cookie 将不会被退回。该功能不
+// 修改cookie jar。
 func (j *Jar) AllCookies() (cookies []*http.Cookie) {
 	return j.allCookies(time.Now())
 }
 
-// allCookies is like AllCookies but takes the current time as a parameter.
+// allCookies 与 AllCookies 类似，但将当前时间作为参数。
 func (j *Jar) allCookies(now time.Time) []*http.Cookie {
 	var selected []entry
 	j.mu.Lock()
@@ -348,8 +348,8 @@ func (j *Jar) allCookies(now time.Time) []*http.Cookie {
 	return cookies
 }
 
-// RemoveCookie removes the cookie matching the name, domain and path
-// specified by c.
+// RemoveCookie 删除与名称、域和路径匹配的cookie
+// 由 c 指定。
 func (j *Jar) RemoveCookie(c *http.Cookie) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
@@ -362,8 +362,8 @@ func (j *Jar) RemoveCookie(c *http.Cookie) {
 	}
 }
 
-// merge merges all the given entries into j. More recently changed
-// cookies take precedence over older ones.
+// merge 将所有给定的条目合并到 j 中。最近更改的
+// cookie 优先于旧的。
 func (j *Jar) merge(entries []entry) {
 	for _, e := range entries {
 		if e.CanonicalHost == "" {
@@ -387,9 +387,9 @@ func (j *Jar) merge(entries []entry) {
 
 var expiryRemovalDuration = 24 * time.Hour
 
-// deleteExpired deletes all entries that have expired for long enough
-// that we can actually expect there to be no external copies of it that
-// might resurrect the dead cookie.
+// deleteExpired 删除所有过期时间足够长的条目
+// 我们实际上可以期望不存在它的外部副本
+// 可能会复活死掉的 cookie。
 func (j *Jar) deleteExpired(now time.Time) {
 	for tld, submap := range j.entries {
 		for id, e := range submap {
@@ -403,7 +403,7 @@ func (j *Jar) deleteExpired(now time.Time) {
 	}
 }
 
-// RemoveAllHost removes any cookies from the jar that were set for the given host.
+// RemoveAllHost 从 jar 中删除为给定主机设置的所有 cookie。
 func (j *Jar) RemoveAllHost(host string) {
 	host, err := canonicalHost(host)
 	if err != nil {
@@ -418,10 +418,10 @@ func (j *Jar) RemoveAllHost(host string) {
 	submap := j.entries[key]
 	for id, e := range submap {
 		if e.CanonicalHost == host {
-			// Save some space by deleting the value when the cookie
-			// expires. We can't delete the cookie itself because then
-			// we wouldn't know that the cookie had expired when
-			// we merge with another cookie jar.
+			//通过删除cookie时的值来节省一些空间
+			//过期。我们无法删除 cookie 本身，因为那样的话
+			//我们不知道 cookie 何时过期
+			//我们与另一个 cookie jar 合并。
 			e.Value = ""
 			e.Expires = expired
 			submap[id] = e
@@ -429,17 +429,17 @@ func (j *Jar) RemoveAllHost(host string) {
 	}
 }
 
-// RemoveAll removes all the cookies from the jar.
+// RemoveAll 会从罐子中删除所有 cookie。
 func (j *Jar) RemoveAll() {
 	expired := time.Now().Add(-1 * time.Second)
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	for _, submap := range j.entries {
 		for id, e := range submap {
-			// Save some space by deleting the value when the cookie
-			// expires. We can't delete the cookie itself because then
-			// we wouldn't know that the cookie had expired when
-			// we merge with another cookie jar.
+			//通过删除cookie时的值来节省一些空间
+			//过期。我们无法删除 cookie 本身，因为那样的话
+			//我们不知道 cookie 何时过期
+			//我们与另一个 cookie jar 合并。
 			e.Value = ""
 			e.Expires = expired
 			submap[id] = e
@@ -447,21 +447,21 @@ func (j *Jar) RemoveAll() {
 	}
 }
 
-// SetCookies implements the SetCookies method of the http.CookieJar interface.
+// SetCookies 实现了 http.CookieJar 接口的 SetCookies 方法。
 //
-// It does nothing if the URL's scheme is not HTTP or HTTPS.
+// 如果 URL 的方案不是 HTTP 或 HTTPS，则不会执行任何操作。
 func (j *Jar) SetCookies(u *url.URL, cookies []*http.Cookie) {
 	j.setCookies(u, cookies, time.Now())
 }
 
-// setCookies is like SetCookies but takes the current time as parameter.
+// setCookies 与 SetCookies 类似，但以当前时间作为参数。
 func (j *Jar) setCookies(u *url.URL, cookies []*http.Cookie, now time.Time) {
 	if len(cookies) == 0 {
 		return
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		// TODO is this really correct? It might be nice to send
-		// cookies to websocket connections, for example.
+		//TODO 这真的正确吗？发送也许会很好
+		//例如，cookie 到 websocket 连接。
 		return
 	}
 	host, err := canonicalHost(u.Host)
@@ -497,8 +497,8 @@ func (j *Jar) setCookies(u *url.URL, cookies []*http.Cookie, now time.Time) {
 	}
 }
 
-// canonicalHost strips port from host if present and returns the canonicalized
-// host name.
+// canonicalHost 从主机中剥离端口（如果存在）并返回规范化的端口
+// 主机名。
 func canonicalHost(host string) (string, error) {
 	var err error
 	host = strings.ToLower(host)
@@ -509,14 +509,14 @@ func canonicalHost(host string) (string, error) {
 		}
 	}
 	if strings.HasSuffix(host, ".") {
-		// Strip trailing dot from fully qualified domain names.
+		// 从完全限定的域名中去除尾随点。
 		host = host[:len(host)-1]
 	}
 	return toASCII(host)
 }
 
-// hasPort reports whether host contains a port number. host may be a host
-// name, an IPv4 or an IPv6 address.
+// hasPort 报告主机是否包含端口号。主机可能是主机
+// 名称、IPv4 或 IPv6 地址。
 func hasPort(host string) bool {
 	colons := strings.Count(host, ":")
 	if colons == 0 {
@@ -528,7 +528,7 @@ func hasPort(host string) bool {
 	return host[0] == '[' && strings.Contains(host, "]:")
 }
 
-// jarKey returns the key to use for a jar.
+// jarKey 返回用于 jar 的密钥。
 func jarKey(host string, psl PublicSuffixList) string {
 	if isIP(host) {
 		return host
@@ -556,13 +556,13 @@ func jarKey(host string, psl PublicSuffixList) string {
 	return host[prevDot+1:]
 }
 
-// isIP reports whether host is an IP address.
+// isIP 报告主机是否是 IP 地址。
 func isIP(host string) bool {
 	return net.ParseIP(host) != nil
 }
 
-// defaultPath returns the directory part of an URL's path according to
-// RFC 6265 section 5.1.4.
+// defaultPath 根据以下条件返回 URL 路径的目录部分
+// RFC 6265 第 5.1.4 节。
 func defaultPath(path string) string {
 	if len(path) == 0 || path[0] != '/' {
 		return "/" // Path is empty or malformed.
@@ -575,16 +575,16 @@ func defaultPath(path string) string {
 	return path[:i] // Path is either of form "/abc/xyz" or "/abc/xyz/".
 }
 
-// newEntry creates an entry from a http.Cookie c. now is the current
-// time and is compared to c.Expires to determine deletion of c. defPath
-// and host are the default-path and the canonical host name of the URL
-// c was received from.
+// newEntry 从 http.Cookie 创建一个条目 c.现在是当前
+// 与 c.Expires 进行比较以确定删除 c.定义路径
+// 和 host 是 URL 的默认路径和规范主机名
+// c 是从接收到的。
 //
-// The returned entry should be removed if its expiry time is in the
-// past. In this case, e may be incomplete, but it will be valid to call
-// e.id (which depends on e's Name, Domain and Path).
+// 如果返回的条目在过期时间内，则应将其删除
+// 过去的。在这种情况下，e可能不完整，但调用它是有效的
+// e.id（取决于 e 的名称、域和路径）。
 //
-// A malformed c.Domain will result in an error.
+// 格式错误的 c.Domain 将导致错误。
 func (j *Jar) newEntry(c *http.Cookie, now time.Time, defPath, host string) (e entry, err error) {
 	e.Name = c.Name
 	if c.Path == "" || c.Path[0] != '/' {
@@ -627,64 +627,64 @@ var (
 	errNoHostname      = errors.New("cookiejar: no host name available (IP only)")
 )
 
-// endOfTime is the time when session (non-persistent) cookies expire.
-// This instant is representable in most date/time formats (not just
-// Go's time.Time) and should be far enough in the future.
+// endOfTime 是会话（非持久）cookie 过期的时间。
+// 这个时刻可以用大多数日期/时间格式表示（不仅仅是
+// Go 的 time.Time) 并且应该在未来足够远的地方。
 var endOfTime = time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)
 
-// domainAndType determines the cookie's domain and hostOnly attribute.
+// 域和类型决定了 cookie 的域和主机专用属性。
 func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 	if domain == "" {
-		// No domain attribute in the SetCookie header indicates a
-		// host cookie.
+		//SetCookie 标头中没有任何域属性指示
+		//主机cookie。
 		return host, true, nil
 	}
 
 	if isIP(host) {
-		// According to RFC 6265 domain-matching includes not being
-		// an IP address.
-		// TODO: This might be relaxed as in common browsers.
+		//根据 RFC 6265 域匹配包括不存在
+		//IP 地址。
+		//TODO：这可能会像普通浏览器一样宽松。
 		return "", false, errNoHostname
 	}
 
-	// From here on: If the cookie is valid, it is a domain cookie (with
-	// the one exception of a public suffix below).
-	// See RFC 6265 section 5.2.3.
+	//从这里开始：如果 cookie 有效，则它是域 cookie（带有
+	//下面是公共后缀的一个例外）。
+	//请参阅 RFC 6265 第 5.2.3 节。
 	if domain[0] == '.' {
 		domain = domain[1:]
 	}
 
 	if len(domain) == 0 || domain[0] == '.' {
-		// Received either "Domain=." or "Domain=..some.thing",
-		// both are illegal.
+		//收到“Domain=.”或“域=..some.thing”，
+		//两者都是非法的。
 		return "", false, errMalformedDomain
 	}
 	domain = strings.ToLower(domain)
 
 	if domain[len(domain)-1] == '.' {
-		// We received stuff like "Domain=www.example.com.".
-		// Browsers do handle such stuff (actually differently) but
-		// RFC 6265 seems to be clear here (e.g. section 4.1.2.3) in
-		// requiring a reject.  4.1.2.3 is not normative, but
-		// "Domain Matching" (5.1.3) and "Canonicalized Host Names"
-		// (5.1.2) are.
+		//我们收到了诸如“Domain=www.example.com.”之类的内容。
+		//浏览器确实处理这些东西（实际上不同）但是
+		//RFC 6265 在这里似乎很清楚（例如第 4.1.2.3 节）
+		//需要拒绝。  4.1.2.3 不是规范性的，但是
+		//“域匹配”(5.1.3) 和“规范化主机名”
+		//(5.1.2) 是。
 		return "", false, errMalformedDomain
 	}
 
-	// See RFC 6265 section 5.3 #5.
+	// 请参阅 RFC 6265 第 5.3 #5 节。
 	if j.psList != nil {
 		if ps := j.psList.PublicSuffix(domain); ps != "" && !hasDotSuffix(domain, ps) {
 			if host == domain {
-				// This is the one exception in which a cookie
-				// with a domain attribute is a host cookie.
+				//这是 cookie 的一个例外
+				//带有domain属性的是一个主机cookie。
 				return host, true, nil
 			}
 			return "", false, errIllegalDomain
 		}
 	}
 
-	// The domain must domain-match host: www.mycompany.com cannot
-	// set cookies for .ourcompetitors.com.
+	//域名必须与主机域名匹配：www.mycompany.com 不能
+	//为 .ourcompetitors.com 设置 cookie。
 	if host != domain && !hasDotSuffix(host, domain) {
 		return "", false, errIllegalDomain
 	}
@@ -692,11 +692,11 @@ func (j *Jar) domainAndType(host, domain string) (string, bool, error) {
 	return domain, false, nil
 }
 
-// DefaultCookieFile returns the default cookie file to use
-// for persisting cookie data.
-// The following names will be used in decending order of preference:
-//	- the value of the $GOCOOKIES environment variable.
-//	- $HOME/.go-cookies
+// DefaultCookieFile 返回要使用的默认 cookie 文件
+// 用于持久化 cookie 数据。
+// 以下名称将按优先级降序使用：
+// -$GOCOOKIES 环境变量的值。
+// -$HOME/.go-cookies
 func DefaultCookieFile() string {
 	if f := os.Getenv("GOCOOKIES"); f != "" {
 		return f

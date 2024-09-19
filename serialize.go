@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"gopkg.in/retry.v1"
@@ -29,14 +30,35 @@ func (j *Jar) Save() error {
 	return j.save(time.Now())
 }
 
-// MarshalJSON implements json.Marshaler by encoding all persistent cookies
-// currently in the jar.
+// MarshalJSON 通过编码所有持久性 cookie 来实现 json.Marshaler
+// 当前在罐子中。
 func (j *Jar) MarshalJSON() ([]byte, error) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
-	// Marshaling entries can never fail.
-	data, _ := json.Marshal(j.allPersistentEntries())
-	return data, nil
+	return json.Marshal(j.allPersistentEntries())
+}
+
+// 将cookie加载到当前jar中
+func (j *Jar) LoadJSON(str string) error {
+	return j.mergeFrom(strings.NewReader(str))
+}
+
+func (j *Jar) ToJSON() string {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	r := strings.NewReader("")
+	if err := j.mergeFrom(r); err != nil {
+		log.Printf("cannot read cookie file to merge it; ignoring it: %v", err)
+		return ""
+	}
+	j.deleteExpired(time.Now())
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return ""
+	}
+
+	// 将字节切片转换为string
+	return string(data)
 }
 
 // save is like Save but takes the current time as a parameter.
